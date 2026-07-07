@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://loom.local/unravel/layers.schema.json",
+  "title": "UnravelLayers",
+  "type": "object",
+  "required": ["version", "source_image", "parts"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "source_image": {
+      "type": "object",
+      "required": ["filename", "width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "filename": { "type": "string", "minLength": 1 },
+        "width": { "type": "integer", "exclusiveMinimum": 0 },
+        "height": { "type": "integer", "exclusiveMinimum": 0 }
+      }
+    },
+    "parts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/part" }
+    }
+  },
+  "$defs": {
+    "label": {
+      "type": "string",
+      "enum": [
+        "face",
+        "eye_l",
+        "eye_r",
+        "eyebrow_l",
+        "eyebrow_r",
+        "mouth",
+        "hair_front",
+        "hair_back"
+      ]
+    },
+    "part": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "layer_file",
+        "parent_id",
+        "depth_order",
+        "anchor",
+        "bbox"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "$ref": "#/$defs/label" },
+        "layer_file": { "type": "string", "minLength": 1 },
+        "parent_id": {
+          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+        },
+        "depth_order": { "type": "integer" },
+        "anchor": { "$ref": "#/$defs/point" },
+        "bbox": { "$ref": "#/$defs/bbox" }
+      }
+    },
+    "point": {
+      "type": "object",
+      "required": ["x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      }
+    },
+    "bbox": {
+      "type": "object",
+      "required": ["x", "y", "width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "integer" },
+        "y": { "type": "integer" },
+        "width": { "type": "integer", "exclusiveMinimum": 0 },
+        "height": { "type": "integer", "exclusiveMinimum": 0 }
+      }
+    }
+  }
+}
