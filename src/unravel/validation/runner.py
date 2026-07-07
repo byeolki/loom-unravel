@@ -5,7 +5,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from ..pipeline import NoFaceDetectedError, run_m1
+from ..pipeline import NoFaceDetectedError, PipelineModels, run_m1
 from ..schema import REQUIRED_LABELS, LayersSchemaError
 from .report import ImageResult, ValidationSummary
 
@@ -21,11 +21,12 @@ def discover_images(input_dir: Path) -> list[Path]:
 def run_validation(input_dir: Path, output_dir: Path, inpaint: bool = False) -> ValidationSummary:
     output_dir.mkdir(parents=True, exist_ok=True)
     summary = ValidationSummary()
+    models = PipelineModels.build(inpaint=inpaint)
 
     for image_path in discover_images(input_dir):
         image_output_dir = output_dir / image_path.stem
         try:
-            document = run_m1(image_path, image_output_dir, inpaint=inpaint)
+            document = run_m1(image_path, image_output_dir, inpaint=inpaint, models=models)
             present_labels = {p.label for p in document.parts}
             missing = [label for label in REQUIRED_LABELS if label not in present_labels]
             summary.results.append(
@@ -58,6 +59,11 @@ def run_validation(input_dir: Path, output_dir: Path, inpaint: bool = False) -> 
     (output_dir / "validation_report.json").write_text(json.dumps(summary.to_dict(), indent=2))
     build_face_montage(input_dir, output_dir)
     return summary
+
+
+def load_validation_report(output_dir: Path) -> ValidationSummary:
+    data = json.loads((output_dir / "validation_report.json").read_text())
+    return ValidationSummary.from_dict(data)
 
 
 def build_face_montage(input_dir: Path, output_dir: Path) -> Path | None:

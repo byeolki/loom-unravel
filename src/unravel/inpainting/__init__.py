@@ -1,4 +1,4 @@
-from .compose import OCCLUDED_BY, apply_inpainting
+from .compose import apply_inpainting, occluders_of
 from .inpainter import LamaInpainter
 
-__all__ = ["LamaInpainter", "OCCLUDED_BY", "apply_inpainting"]
+__all__ = ["LamaInpainter", "apply_inpainting", "occluders_of"]

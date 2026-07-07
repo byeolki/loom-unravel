@@ -33,10 +33,15 @@ def make_input_dir(tmp_path: Path, names: list[str]) -> Path:
     return input_dir
 
 
+def stub_out_model_loading(monkeypatch):
+    monkeypatch.setattr(runner_module.PipelineModels, "build", classmethod(lambda cls, inpaint=False: "stub-models"))
+
+
 def test_mixed_success_and_failure(tmp_path, monkeypatch):
+    stub_out_model_loading(monkeypatch)
     input_dir = make_input_dir(tmp_path, ["good.png", "no_face.png", "partial.png"])
 
-    def fake_run_m1(image_path, output_dir, inpaint=False):
+    def fake_run_m1(image_path, output_dir, inpaint=False, models=None):
         if image_path.name == "no_face.png":
             raise NoFaceDetectedError("no face")
         if image_path.name == "partial.png":
@@ -61,10 +66,11 @@ def test_mixed_success_and_failure(tmp_path, monkeypatch):
 
 
 def test_meets_criterion_at_seven_of_ten(tmp_path, monkeypatch):
+    stub_out_model_loading(monkeypatch)
     names = [f"img_{i}.png" for i in range(10)]
     input_dir = make_input_dir(tmp_path, names)
 
-    def fake_run_m1(image_path, output_dir, inpaint=False):
+    def fake_run_m1(image_path, output_dir, inpaint=False, models=None):
         index = int(image_path.stem.split("_")[1])
         if index < 7:
             return make_document(FULL_LABELS)
@@ -76,3 +82,26 @@ def test_meets_criterion_at_seven_of_ten(tmp_path, monkeypatch):
 
     assert summary.parts_pass_rate == 0.7
     assert summary.meets_parts_criterion
+
+
+def test_models_built_once_and_reused_across_images(tmp_path, monkeypatch):
+    input_dir = make_input_dir(tmp_path, ["a.png", "b.png", "c.png"])
+    build_calls = []
+    monkeypatch.setattr(
+        runner_module.PipelineModels,
+        "build",
+        classmethod(lambda cls, inpaint=False: build_calls.append(inpaint) or "stub-models"),
+    )
+
+    seen_models = []
+
+    def fake_run_m1(image_path, output_dir, inpaint=False, models=None):
+        seen_models.append(models)
+        return make_document(FULL_LABELS)
+
+    monkeypatch.setattr(runner_module, "run_m1", fake_run_m1)
+
+    runner_module.run_validation(input_dir, tmp_path / "out", inpaint=False)
+
+    assert build_calls == [False]
+    assert seen_models == ["stub-models"] * 3

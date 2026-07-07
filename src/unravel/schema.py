@@ -6,17 +6,6 @@ from pathlib import Path
 
 import jsonschema
 
-PART_LABELS = (
-    "face",
-    "eye_l",
-    "eye_r",
-    "eyebrow_l",
-    "eyebrow_r",
-    "mouth",
-    "hair_front",
-    "hair_back",
-)
-
 REQUIRED_LABELS = (
     "face",
     "eye_l",

@@ -2,6 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://loom.local/unravel/layers.schema.json",
   "title": "UnravelLayers",
+  "description": "JSON Schema draft-07 cannot express cross-item uniqueness or references, so the following invariants are NOT structurally enforced here but ARE required by this format and are enforced by the reference implementation (unravel.schema.validate_layers_dict): (1) every part.id must be unique within parts; (2) every non-null part.parent_id must equal another part's id in the same document; (3) each label in $defs/label must appear on at most one part; (4) face, eye_l, eye_r, eyebrow_l, eyebrow_r, and mouth must each appear on exactly one part. Consumers validating layers.json with a plain JSON Schema validator must additionally check (1)-(4) themselves.",
   "type": "object",
   "required": ["version", "source_image", "parts"],
   "additionalProperties": false,
@@ -53,11 +54,16 @@
       ],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Must be unique across all parts in this document."
+        },
         "label": { "$ref": "#/$defs/label" },
         "layer_file": { "type": "string", "minLength": 1 },
         "parent_id": {
-          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }],
+          "description": "Must equal another part's id in this document, or null for a root part."
         },
         "depth_order": { "type": "integer" },
         "anchor": { "$ref": "#/$defs/point" },
