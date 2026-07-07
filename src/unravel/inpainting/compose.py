@@ -3,21 +3,17 @@ from __future__ import annotations
 import numpy as np
 
 from ..geometry import mask_bbox
-from .inpainter import DiffusionInpainter
+from .inpainter import LamaInpainter
 
 OCCLUDED_BY: dict[str, tuple[str, ...]] = {
     "face": ("eyebrow_l", "eyebrow_r", "eye_l", "eye_r", "mouth", "hair_front"),
-}
-
-PART_PROMPTS: dict[str, str] = {
-    "face": "smooth anime character skin, plain face, no eyes, no eyebrows, no mouth",
 }
 
 BBOX_PADDING = 8
 
 
 def apply_inpainting(
-    rgb: np.ndarray, masks: dict[str, np.ndarray], inpainter: DiffusionInpainter
+    rgb: np.ndarray, masks: dict[str, np.ndarray], inpainter: LamaInpainter
 ) -> dict[str, np.ndarray]:
     rgb_by_label = {label: rgb for label in masks}
 
@@ -37,7 +33,7 @@ def apply_inpainting(
 
         crop_rgb = rgb[y : y + h, x : x + w]
         crop_hole = hole[y : y + h, x : x + w]
-        inpainted_crop = inpainter.inpaint(crop_rgb, crop_hole, PART_PROMPTS[label])
+        inpainted_crop = inpainter.inpaint(crop_rgb, crop_hole)
 
         patched = rgb.copy()
         patched[y : y + h, x : x + w] = np.where(crop_hole[:, :, None], inpainted_crop, crop_rgb)

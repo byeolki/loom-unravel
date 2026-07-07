@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 
 from .geometry import mask_bbox, mask_centroid
-from .inpainting import DiffusionInpainter, apply_inpainting
+from .inpainting import LamaInpainter, apply_inpainting
 from .landmarks import AnimeFaceLandmarkDetector
 from .parts import DEPTH_ORDER, PARENT_OF, build_part_masks
 from .schema import BBox, LayersDocument, Part, Point, SourceImage, validate_layers_document
@@ -48,7 +48,7 @@ def run_m1(input_path: Path, output_dir: Path, inpaint: bool = False) -> LayersD
     masks = build_part_masks(rgb.shape[:2], silhouette, landmarks)
 
     if inpaint:
-        inpainter = DiffusionInpainter()
+        inpainter = LamaInpainter()
         rgb_by_label = apply_inpainting(rgb, masks, inpainter)
     else:
         rgb_by_label = {label: rgb for label in masks}
