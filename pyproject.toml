@@ -12,6 +12,10 @@ dependencies = [
   "onnxruntime>=1.17",
   "huggingface_hub>=0.20",
   "jsonschema>=4.20",
+  "diffusers>=0.27",
+  "transformers>=4.38",
+  "accelerate>=0.27",
+  "safetensors>=0.4",
 ]
 
 [project.optional-dependencies]

@@ -8,6 +8,3 @@ PARENT_OF: dict[str, str | None] = {
     "hair_front": None,
     "hair_back": None,
 }
-
-UNRANKED_DEPTH_ORDER = 0
-

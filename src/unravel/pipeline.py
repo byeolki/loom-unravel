@@ -7,8 +7,9 @@ import numpy as np
 from PIL import Image
 
 from .geometry import mask_bbox, mask_centroid
+from .inpainting import DiffusionInpainter, apply_inpainting
 from .landmarks import AnimeFaceLandmarkDetector
-from .parts import PARENT_OF, UNRANKED_DEPTH_ORDER, build_part_masks
+from .parts import DEPTH_ORDER, PARENT_OF, build_part_masks
 from .schema import BBox, LayersDocument, Part, Point, SourceImage, validate_layers_document
 from .segmentation import AnimeSegmenter
 
@@ -30,7 +31,7 @@ class NoFaceDetectedError(RuntimeError):
     pass
 
 
-def run_m1(input_path: Path, output_dir: Path) -> LayersDocument:
+def run_m1(input_path: Path, output_dir: Path, inpaint: bool = False) -> LayersDocument:
     image = Image.open(input_path).convert("RGBA")
     rgba = np.array(image)
     rgb = rgba[:, :, :3]
@@ -46,6 +47,12 @@ def run_m1(input_path: Path, output_dir: Path) -> LayersDocument:
 
     masks = build_part_masks(rgb.shape[:2], silhouette, landmarks)
 
+    if inpaint:
+        inpainter = DiffusionInpainter()
+        rgb_by_label = apply_inpainting(rgb, masks, inpainter)
+    else:
+        rgb_by_label = {label: rgb for label in masks}
+
     layers_dir = output_dir / "layers"
     layers_dir.mkdir(parents=True, exist_ok=True)
 
@@ -57,7 +64,7 @@ def run_m1(input_path: Path, output_dir: Path) -> LayersDocument:
             continue
 
         x, y, w, h = bbox
-        crop_rgb = rgb[y : y + h, x : x + w]
+        crop_rgb = rgb_by_label[label][y : y + h, x : x + w]
         crop_mask = mask[y : y + h, x : x + w].astype(np.float32)
         crop_base_alpha = base_alpha[y : y + h, x : x + w]
         alpha = np.clip(crop_mask * crop_base_alpha * 255.0, 0, 255).astype(np.uint8)
@@ -73,7 +80,7 @@ def run_m1(input_path: Path, output_dir: Path) -> LayersDocument:
                 label=label,
                 layer_file=layer_filename,
                 parent_id=PARENT_OF[label],
-                depth_order=UNRANKED_DEPTH_ORDER,
+                depth_order=DEPTH_ORDER[label],
                 anchor=Point(x=anchor_x, y=anchor_y),
                 bbox=BBox(x=x, y=y, width=w, height=h),
             )
